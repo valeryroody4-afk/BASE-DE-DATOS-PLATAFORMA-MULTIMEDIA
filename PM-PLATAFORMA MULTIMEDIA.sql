@@ -1,3 +1,4 @@
+-- Active: 1785756641768@@127.0.0.1@3306@plataforma_multimedia
 --- BASE DE DATOS PLATAFORMA MULTIMEDIA
 
 --- DDL -> Lenguaje de Definición de Datos
@@ -11,114 +12,260 @@ CREATE DATABASE plataforma_multimedia;
 
 USE plataforma_multimedia;
 
+-- DROP TABLE IF EXISTS usuario; <---- # Esta existe para borrar un tabla existente 
+
+##############################################################
+--    1. Tablas independientes (no dependen de ninguna)    --
+##############################################################
+
 --- tabla usuario
+
+-- TABLA: USUARIO
+
 CREATE TABLE usuario(
-    nombre_usuario INT (10) PRIMARY KEY AUTO_INCREMENT,
+    num_usuario INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(30) NOT NULL,
-    correo VARCHAR(100) NOT NULL,
+    correo VARCHAR(100) NOT NULL UNIQUE,
     contrasena VARCHAR(255) NOT NULL,
     fecha_registro DATETIME NOT NULL
 );
 
---- tabla plan
+-- TABLA: PLAN
 
 CREATE TABLE plan(
-    num_plan INT (5) PRIMARY KEY AUTO_INCREMENT,
+    codigo_plan VARCHAR(6) PRIMARY KEY,
     nombre VARCHAR(30) NOT NULL UNIQUE,
     precio DECIMAL(10,2) NOT NULL,
     beneficio VARCHAR(255) NOT NULL
 );
 
---- tabla artista
+-- TABLA: ARTISTA
 
 CREATE TABLE artista(
-    num_artista INT(10) PRIMARY KEY AUTO_INCREMENT,
+    codigo_artista VARCHAR(6) PRIMARY KEY,
     nombre_artistico VARCHAR(100) NOT NULL,
-    rfc VARCHAR(13) NOT NULL,
-    cuentaBancaria VARCHAR (20) NOT NULL 
+    rfc VARCHAR(13) NOT NULL UNIQUE,
+    cuenta_bancaria VARCHAR(20) NOT NULL
 );
 
---- tabla estudio
+-- TABLA: ESTUDIO
 
 CREATE TABLE estudio(
-    num_estudio INT(10) PRIMARY KEY AUTO_INCREMENT,
-    nombre_empresa VARCHAR (100) NOT NULL UNIQUE, 
+    codigo_estudio VARCHAR(6) PRIMARY KEY,
+    nombre_empresa VARCHAR(100) NOT NULL UNIQUE,
     rfc_empresa VARCHAR(12) NOT NULL UNIQUE,
-    nombre_pila VARCHAR (30) NOT NULL,
+    nombre_pila VARCHAR(30) NOT NULL,
     primer_apellido VARCHAR(30) NOT NULL,
-    segundo_apellido VARCHAR (30) NULL,
+    segundo_apellido VARCHAR(30),
     telefono VARCHAR(15) NOT NULL,
     fecha_inicio DATE NOT NULL,
     fecha_final DATE NOT NULL
 );
 
---- tabla genero
+-- TABLA: GÉNERO
 
 CREATE TABLE genero(
-    num_genero INT (5) PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR (50) NOT NULL UNIQUE,
-    descripcion VARCHAR(25) NOT NULL
-
+    codigo_genero VARCHAR(6) PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    descripcion VARCHAR(255) NOT NULL
 );
 
---- tabla terminos_lic
+
+-- TABLA: TERMINOS_LIC
+
 CREATE TABLE terminos_lic(
-    codigo_termino VARCHAR (5) PRIMARY KEY AUTO_INCREMENT, #Se quita el auto incrementable#
+    codigo_termino VARCHAR(6) PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL UNIQUE,
-    tipo_terminos VARCHAR (50) NOT NULL,
-    restricciones VARCHAR (255) NOT NULL,
-    descripcion VARCHAR (255) NOT NULL
+    tipo_terminos VARCHAR(50) NOT NULL,
+    restricciones VARCHAR(255) NOT NULL,
+    descripcion VARCHAR(255) NOT NULL
 );
+###############################################
+--      2. Tablas que son relacionadas      --
+###############################################
+-- TABLA: PLAYLIST
 
---- tabla playlist
 CREATE TABLE playlist(
-    num_playlist INT (10) PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR (100) NOT NULL,
-    total_elementos INT (10) NOT NULL DEFAULT (0),
-    fecha_creacion  DATE NOT NULL,
-    usuario INT (10) NOT NULL,
-    FOREING KEY (usuario) REFERENCES usuario (num)
+    num_playlist INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    total_elementos INT NOT NULL DEFAULT 0,
+    fecha_creacion DATETIME NOT NULL,
+    usuario INT NOT NULL,
+    FOREIGN KEY (usuario) REFERENCES usuario(num_usuario)
 );
 
---- tabla album
+-- TABLA: ALBUM
+
 CREATE TABLE album(
-    num_album INT(10) PRIMARY KEY AUTO_INCREMENT,
-    titulo_portada VARCHAR (100) NOT NULL,
-    artista INT (10) NOT NULL,
-    FOREING KEY (artista) REFERENCES artista(num)
+    codigo_album VARCHAR(6) PRIMARY KEY,
+    titulo_portada VARCHAR(100) NOT NULL,
+    artista VARCHAR(6) NOT NULL,
+    FOREIGN KEY (artista) REFERENCES artista( codigo_artista)
 );
 
---- tabla pist
+
+-- TABLA: PISTA
+
 CREATE TABLE pista(
-    num_pista INT(10) PRIMARY KEY AUTO_INCREMENT,
-    titulo_ portada  varchar (100) NOT NULL,
+    codigo_pista VARCHAR(6) PRIMARY KEY,
+    titulo_portada VARCHAR(100) NOT NULL,
     duracion TIME NOT NULL,
-    archivo_audio_url VARCHAR (255) NOT NULL,
-    fecha_publicidad DATE NOT NULL,
-    genero INT (5) NOT NULL,
-    FOREIGN KEY (genero) REFERENCES genero(num)
+    archivo_audio_url VARCHAR(255) NOT NULL,
+    fecha_publicado DATE NOT NULL,
+    genero VARCHAR(6) NOT NULL,
+    FOREIGN KEY (genero) REFERENCES genero(codigo_genero)
 );
 
---- tabla suscripcion
+-- TABLA: SUSCRIPCION
+
 CREATE TABLE suscripcion(
-    num_suscripcion INT (10) PRIMARY KEY AUTO_INCREMENT,
-    terminos VARCHAR (255) NOT NULL,
-    estado VARCHAR (20) NOT NULL,
+    num_suscripcion INT PRIMARY KEY AUTO_INCREMENT,
+    terminos VARCHAR(255) NOT NULL,
+    estado VARCHAR(20) NOT NULL,
     fecha_inicio DATE NOT NULL,
-    fecha_final DATE NOT NULL
-    usuario INT (10) NOT NULL, 
-    plan INT(5) NOT NULL,
-    FOREIGN  KEY (usuariio) REFERENCES usuario (num),
-    FOREIGN KEY (plan) REFERENCES plan (num)
+    fecha_final DATE NOT NULL,
+    usuario INT NOT NULL,
+    plan VARCHAR(6) NOT NULL,
+
+    FOREIGN KEY (usuario) REFERENCES usuario(num_usuario),
+    FOREIGN KEY (plan) REFERENCES plan(codigo_plan)
 );
 
--- tabla pago
+-- TABLA: PAGO
+
 CREATE TABLE pago(
-    codigo VARCHAR (11) PRIMARY KEY,
-    fecha_pago DATE NOT NULL,
+    codigo_pago VARCHAR(6) PRIMARY KEY,
+    fecha_pago DATETIME NOT NULL,
     monto DECIMAL(8,2) NOT NULL,
-     
-)
+    metodo_pago VARCHAR(30) NOT NULL,
+    estado_pago VARCHAR(20) NOT NULL,
+    referencia_pago VARCHAR(50) NOT NULL UNIQUE,
+    suscripcion INT NOT NULL,
+
+    FOREIGN KEY (suscripcion)
+    REFERENCES suscripcion(num_suscripcion)
+);
+
+-- TABLA: LICENCIA
+
+CREATE TABLE licencia(
+    codigo_licencia VARCHAR(6) PRIMARY KEY,
+    costo DECIMAL(10,2) NOT NULL,
+    fecha_inicio DATE NOT NULL,
+    fecha_final DATE,
+    termino VARCHAR(6) NOT NULL,
+    pista VARCHAR(6) NOT NULL,
+
+    FOREIGN KEY (termino)
+    REFERENCES terminos_lic(codigo_termino),
+
+    FOREIGN KEY (pista)
+    REFERENCES pista(codigo_pista)
+);
+
+-- TABLA: CONTRATO
+
+CREATE TABLE contrato(
+    codigo_contrato VARCHAR(6) PRIMARY KEY,
+    terminos VARCHAR(255) NOT NULL,
+    porcen_regalias DECIMAL(5,2) NOT NULL,
+    fecha_firma DATE NOT NULL,
+    artista VARCHAR(6) NOT NULL,
+    licencia VARCHAR(6) NOT NULL,
+    estudio VARCHAR(6) NOT NULL,
+
+    FOREIGN KEY (artista)
+    REFERENCES artista(codigo_artista),
+
+    FOREIGN KEY (licencia)
+    REFERENCES licencia(codigo_licencia),
+
+    FOREIGN KEY (estudio)
+    REFERENCES estudio(codigo_estudio)
+);
+
+-- TABLA: INTERACCION
+
+CREATE TABLE interaccion(
+    num_interaccion INT PRIMARY KEY AUTO_INCREMENT,
+    tipo_interaccion VARCHAR(20) NOT NULL,
+    comentario VARCHAR(255),
+    fecha DATETIME NOT NULL,
+    usuario INT NOT NULL,
+    pista VARCHAR(6) NOT NULL,
+
+    FOREIGN KEY (usuario)
+    REFERENCES usuario(num_usuario),
+
+    FOREIGN KEY (pista)
+    REFERENCES pista(codigo_pista)
+);
 
 
+#################################################
+--   3. Tablas que son relacionadas en (M:M)   --
+#################################################
 
+-- TABLA: PLAYLIST_PISTA
+
+CREATE TABLE playlist_pista(
+    num_playlist INT,
+    codigo_pista VARCHAR(6),
+
+    FOREIGN KEY (num_playlist)
+    REFERENCES playlist(num_playlist),
+
+    FOREIGN KEY (codigo_pista)
+    REFERENCES pista(codigo_pista),
+
+    PRIMARY KEY (num_playlist, codigo_pista)
+);
+
+-- TABLA: INTERPRETA
+
+CREATE TABLE interpreta(
+    codigo_artista VARCHAR(6),
+    codigo_pista VARCHAR(6),
+
+    FOREIGN KEY (codigo_artista)
+    REFERENCES artista(codigo_artista),
+
+    FOREIGN KEY (codigo_pista)
+    REFERENCES pista(codigo_pista),
+
+    PRIMARY KEY (codigo_artista, codigo_pista)
+);
+
+-- TABLA: REPERTORIO
+
+CREATE TABLE repertorio(
+    codigo_pista VARCHAR(6),
+    codigo_album VARCHAR(6),
+
+    FOREIGN KEY (codigo_pista)
+    REFERENCES pista(codigo_pista),
+
+    FOREIGN KEY (codigo_album)
+    REFERENCES album(codigo_album),
+
+    PRIMARY KEY (codigo_pista, codigo_album)
+);
+
+-- TABLA: AUTORIZACION
+
+CREATE TABLE autorizacion(
+    codigo_plan VARCHAR(6),
+    codigo_pista VARCHAR(6),
+
+    FOREIGN KEY (codigo_plan)
+    REFERENCES plan(codigo_plan),
+
+    FOREIGN KEY (codigo_pista)
+    REFERENCES pista(codigo_pista),
+
+    PRIMARY KEY (codigo_plan, codigo_pista)
+);
+
+
+/*******************************
+-- CONSULTAS 
